@@ -80,6 +80,8 @@ h1 {
 
 /* ── Solved banner ── */
 .solved-msg {
+  position: relative;
+  z-index: 1000;
   background: #0f3460;
   border: 2px solid #e94560;
   border-radius: 12px;

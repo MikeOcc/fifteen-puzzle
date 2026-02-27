@@ -191,7 +191,7 @@ function launchFireworks() {
 
   let frame;
   const start = Date.now();
-  const DURATION = 10000;
+  const DURATION = 7000;
 
   function animate() {
     // Fade trail instead of hard clear
