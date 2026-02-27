@@ -4,13 +4,34 @@ let startTime = null;
 let timerInterval = null;
 
 /* ── DOM refs ── */
-const boardEl     = document.getElementById('board');
-const moveCountEl = document.getElementById('move-count');
-const timerEl     = document.getElementById('timer');
-const solvedMsgEl = document.getElementById('solved-msg');
-const finishStats = document.getElementById('finish-stats');
-const newGameBtn  = document.getElementById('new-game');
-const resetBtn    = document.getElementById('reset');
+const boardEl        = document.getElementById('board');
+const moveCountEl    = document.getElementById('move-count');
+const timerEl        = document.getElementById('timer');
+const solvedMsgEl    = document.getElementById('solved-msg');
+const finishStats    = document.getElementById('finish-stats');
+const newGameBtn     = document.getElementById('new-game');
+const resetBtn       = document.getElementById('reset');
+const settingsBtn    = document.getElementById('settings-btn');
+const settingsModal  = document.getElementById('settings-modal');
+const settingsClose  = document.getElementById('settings-close');
+const colorBgInput   = document.getElementById('color-bg');
+const colorTileInput = document.getElementById('color-tile');
+const bestMovesEl    = document.getElementById('best-moves');
+
+/* ── Colors ── */
+const COLOR_DEFAULTS = { bg: '#1a1a2e', tile: '#0f3460' };
+
+function applyColors(bg, tile) {
+  document.documentElement.style.setProperty('--color-bg',   bg);
+  document.documentElement.style.setProperty('--color-tile', tile);
+}
+
+function loadColors() {
+  applyColors(
+    localStorage.getItem('color-bg')   || COLOR_DEFAULTS.bg,
+    localStorage.getItem('color-tile') || COLOR_DEFAULTS.tile
+  );
+}
 
 /* ── API helpers ── */
 async function apiFetch(url, options = {}) {
@@ -256,8 +277,38 @@ function launchFireworks() {
 newGameBtn.addEventListener('click', startNewGame);
 resetBtn.addEventListener('click', resetGame);
 
+settingsBtn.addEventListener('click', async () => {
+  colorBgInput.value   = localStorage.getItem('color-bg')   || COLOR_DEFAULTS.bg;
+  colorTileInput.value = localStorage.getItem('color-tile') || COLOR_DEFAULTS.tile;
+  try {
+    const stats = await apiFetch('/api/stats');
+    bestMovesEl.textContent = stats.bestMoves != null ? `${stats.bestMoves} moves` : '—';
+  } catch (e) {
+    bestMovesEl.textContent = '—';
+  }
+  settingsModal.classList.remove('hidden');
+});
+
+settingsClose.addEventListener('click', () => settingsModal.classList.add('hidden'));
+settingsModal.addEventListener('click', e => {
+  if (e.target === settingsModal) settingsModal.classList.add('hidden');
+});
+
+colorBgInput.addEventListener('input', e => {
+  const val = e.target.value;
+  localStorage.setItem('color-bg', val);
+  applyColors(val, localStorage.getItem('color-tile') || COLOR_DEFAULTS.tile);
+});
+
+colorTileInput.addEventListener('input', e => {
+  const val = e.target.value;
+  localStorage.setItem('color-tile', val);
+  applyColors(localStorage.getItem('color-bg') || COLOR_DEFAULTS.bg, val);
+});
+
 /* ── Bootstrap ── */
 async function init() {
+  loadColors();
   const savedId = localStorage.getItem('fifteen-puzzle-session');
   if (savedId) {
     try {

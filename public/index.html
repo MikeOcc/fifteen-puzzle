@@ -25,6 +25,28 @@
       <div class="controls">
         <button id="new-game">New Game</button>
         <button id="reset">Reset</button>
+        <button id="settings-btn">Settings</button>
+      </div>
+    </div>
+
+    <!-- Settings modal -->
+    <div id="settings-modal" class="modal hidden">
+      <div class="modal-card">
+        <h2>Settings</h2>
+        <div class="setting-row">
+          <label for="color-bg">Background</label>
+          <input type="color" id="color-bg">
+        </div>
+        <div class="setting-row">
+          <label for="color-tile">Tile Color</label>
+          <input type="color" id="color-tile">
+        </div>
+        <hr class="modal-divider">
+        <div class="best-score-row">
+          <span>Best Game</span>
+          <span id="best-moves">—</span>
+        </div>
+        <button id="settings-close">Close</button>
       </div>
     </div>
 

@@ -39,6 +39,19 @@ router.post('/', async (req: Request, res: Response) => {
   }
 });
 
+// GET /api/session/stats — best (minimum) move count across all finished games
+router.get('/stats', async (req: Request, res: Response) => {
+  try {
+    const result = await prisma.gameState.aggregate({
+      where: { finishedAt: { not: null } },
+      _min: { moveCount: true },
+    });
+    res.json({ bestMoves: result._min.moveCount ?? null });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch stats' });
+  }
+});
+
 // GET /api/session/:id — fetch current board + stats
 router.get('/:id', async (req: Request, res: Response) => {
   try {
