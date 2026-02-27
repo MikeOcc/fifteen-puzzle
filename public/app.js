@@ -131,57 +131,116 @@ function launchFireworks() {
 
   const ctx = canvas.getContext('2d');
   const particles = [];
-  const colors = ['#e94560', '#ffd60a', '#00b4d8', '#90e0ef', '#f7c59f', '#fff'];
+  const rockets = [];
+  const colors = ['#e94560', '#ffd60a', '#00b4d8', '#90e0ef', '#f7c59f', '#ff6b6b', '#4ecdc4', '#a8e6cf', '#ffaaa5', '#c084fc', '#fff'];
 
   function createBurst(x, y) {
-    for (let i = 0; i < 70; i++) {
-      const angle = (i / 70) * Math.PI * 2;
-      const speed = 2 + Math.random() * 5;
+    const count = 100 + Math.floor(Math.random() * 40);
+    for (let i = 0; i < count; i++) {
+      const angle = (i / count) * Math.PI * 2;
+      const speed = 1.5 + Math.random() * 6;
       particles.push({
         x, y,
         vx: Math.cos(angle) * speed,
         vy: Math.sin(angle) * speed,
         alpha: 1,
         color: colors[Math.floor(Math.random() * colors.length)],
-        radius: 2 + Math.random() * 2,
+        radius: 1.5 + Math.random() * 2.5,
+        streak: false,
+      });
+    }
+    // Bright streak sparks
+    for (let i = 0; i < 25; i++) {
+      const angle = Math.random() * Math.PI * 2;
+      const speed = 3 + Math.random() * 6;
+      particles.push({
+        x, y,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed,
+        alpha: 1,
+        color: '#fff',
+        radius: 1,
+        streak: true,
       });
     }
   }
 
-  const positions = [
-    [0.25, 0.35], [0.5, 0.22], [0.75, 0.35], [0.38, 0.55], [0.62, 0.48],
-  ].map(([rx, ry]) => [window.innerWidth * rx, window.innerHeight * ry]);
-
-  let idx = 0;
-  function fireBurst() {
-    createBurst(positions[idx][0], positions[idx][1]);
-    idx++;
-    if (idx < positions.length) setTimeout(fireBurst, 350);
+  function spawnRocket(xFrac) {
+    rockets.push({
+      x: window.innerWidth * xFrac,
+      y: window.innerHeight + 10,
+      vy: -(13 + Math.random() * 5),
+      targetY: window.innerHeight * (0.12 + Math.random() * 0.38),
+      color: colors[Math.floor(Math.random() * colors.length)],
+    });
   }
-  fireBurst();
+
+  // Seven waves spread over ~7 s
+  const waves = [
+    [0,    [0.25, 0.5,  0.75]],
+    [700,  [0.15, 0.42, 0.58, 0.85]],
+    [1600, [0.3,  0.5,  0.7]],
+    [2700, [0.2,  0.45, 0.55, 0.8]],
+    [3900, [0.35, 0.5,  0.65]],
+    [5200, [0.22, 0.5,  0.78]],
+    [6600, [0.38, 0.5,  0.62]],
+  ];
+  waves.forEach(([delay, fracs]) => {
+    setTimeout(() => fracs.forEach(spawnRocket), delay);
+  });
 
   let frame;
   const start = Date.now();
+  const DURATION = 10000;
 
   function animate() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    // Fade trail instead of hard clear
+    ctx.fillStyle = 'rgba(26, 26, 46, 0.22)';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
 
+    // Rockets
+    for (let i = rockets.length - 1; i >= 0; i--) {
+      const r = rockets[i];
+      r.y  += r.vy;
+      r.vy *= 0.985;
+      ctx.globalAlpha = 0.9;
+      ctx.fillStyle = '#fff';
+      ctx.beginPath();
+      ctx.arc(r.x, r.y, 2.5, 0, Math.PI * 2);
+      ctx.fill();
+      if (r.y <= r.targetY) {
+        createBurst(r.x, r.y);
+        rockets.splice(i, 1);
+      }
+    }
+
+    // Particles
     for (let i = particles.length - 1; i >= 0; i--) {
       const p = particles[i];
       p.x  += p.vx;
       p.y  += p.vy;
-      p.vy += 0.09;
-      p.alpha -= 0.013;
+      p.vy += 0.07;
+      p.vx *= 0.99;
+      p.alpha -= 0.010;
       if (p.alpha <= 0) { particles.splice(i, 1); continue; }
       ctx.globalAlpha = p.alpha;
-      ctx.fillStyle = p.color;
-      ctx.beginPath();
-      ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
-      ctx.fill();
+      if (p.streak) {
+        ctx.strokeStyle = p.color;
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.moveTo(p.x, p.y);
+        ctx.lineTo(p.x - p.vx * 4, p.y - p.vy * 4);
+        ctx.stroke();
+      } else {
+        ctx.fillStyle = p.color;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+        ctx.fill();
+      }
     }
     ctx.globalAlpha = 1;
 
-    if (Date.now() - start < 4500 || particles.length > 0) {
+    if (Date.now() - start < DURATION || particles.length > 0 || rockets.length > 0) {
       frame = requestAnimationFrame(animate);
     } else {
       canvas.remove();
@@ -189,7 +248,7 @@ function launchFireworks() {
   }
   animate();
 
-  setTimeout(() => { cancelAnimationFrame(frame); canvas.remove(); }, 6000);
+  setTimeout(() => { cancelAnimationFrame(frame); canvas.remove(); }, DURATION + 3000);
 }
 
 /* ── Event listeners ── */
