@@ -17,6 +17,7 @@ const settingsClose  = document.getElementById('settings-close');
 const colorBgInput   = document.getElementById('color-bg');
 const colorTileInput = document.getElementById('color-tile');
 const bestMovesEl    = document.getElementById('best-moves');
+const fastestTimeEl  = document.getElementById('fastest-time');
 
 /* ── Colors ── */
 const COLOR_DEFAULTS = { bg: '#1a1a2e', tile: '#0f3460' };
@@ -281,10 +282,12 @@ settingsBtn.addEventListener('click', async () => {
   colorBgInput.value   = localStorage.getItem('color-bg')   || COLOR_DEFAULTS.bg;
   colorTileInput.value = localStorage.getItem('color-tile') || COLOR_DEFAULTS.tile;
   try {
-    const stats = await apiFetch('/api/stats');
-    bestMovesEl.textContent = stats.bestMoves != null ? `${stats.bestMoves} moves` : '—';
+    const stats = await apiFetch('/api/session/stats');
+    bestMovesEl.textContent  = stats.bestMoves   != null ? `${stats.bestMoves} moves` : '—';
+    fastestTimeEl.textContent = stats.fastestTime != null ? `${stats.fastestTime}s`   : '—';
   } catch (e) {
-    bestMovesEl.textContent = '—';
+    bestMovesEl.textContent   = '—';
+    fastestTimeEl.textContent = '—';
   }
   settingsModal.classList.remove('hidden');
 });

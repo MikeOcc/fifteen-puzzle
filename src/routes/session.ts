@@ -39,14 +39,24 @@ router.post('/', async (req: Request, res: Response) => {
   }
 });
 
-// GET /api/session/stats — best (minimum) move count across all finished games
+// GET /api/session/stats — best move count and fastest time across all finished games
 router.get('/stats', async (req: Request, res: Response) => {
   try {
-    const result = await prisma.gameState.aggregate({
+    const states = await prisma.gameState.findMany({
       where: { finishedAt: { not: null } },
-      _min: { moveCount: true },
+      select: { moveCount: true, startedAt: true, finishedAt: true },
     });
-    res.json({ bestMoves: result._min.moveCount ?? null });
+
+    if (states.length === 0) {
+      return res.json({ bestMoves: null, fastestTime: null });
+    }
+
+    const bestMoves   = Math.min(...states.map(s => s.moveCount));
+    const fastestTime = Math.min(...states.map(s =>
+      Math.round((s.finishedAt!.getTime() - s.startedAt.getTime()) / 1000)
+    ));
+
+    res.json({ bestMoves, fastestTime });
   } catch (error) {
     res.status(500).json({ error: 'Failed to fetch stats' });
   }
