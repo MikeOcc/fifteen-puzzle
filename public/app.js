@@ -80,6 +80,7 @@ async function makeMove(tileIndex) {
       const elapsed = Math.round((new Date(data.finishedAt) - startTime) / 1000);
       finishStats.textContent = `Solved in ${data.moveCount} moves and ${elapsed}s`;
       solvedMsgEl.classList.remove('hidden');
+      launchFireworks();
     }
   } catch (e) {
     // Ignore invalid-move rejections silently; show other errors
@@ -118,6 +119,77 @@ function startTimer() {
 function disableButtons(disabled) {
   newGameBtn.disabled = disabled;
   resetBtn.disabled = disabled;
+}
+
+/* ── Fireworks ── */
+function launchFireworks() {
+  const canvas = document.createElement('canvas');
+  canvas.id = 'fireworks-canvas';
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+  document.body.appendChild(canvas);
+
+  const ctx = canvas.getContext('2d');
+  const particles = [];
+  const colors = ['#e94560', '#ffd60a', '#00b4d8', '#90e0ef', '#f7c59f', '#fff'];
+
+  function createBurst(x, y) {
+    for (let i = 0; i < 70; i++) {
+      const angle = (i / 70) * Math.PI * 2;
+      const speed = 2 + Math.random() * 5;
+      particles.push({
+        x, y,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed,
+        alpha: 1,
+        color: colors[Math.floor(Math.random() * colors.length)],
+        radius: 2 + Math.random() * 2,
+      });
+    }
+  }
+
+  const positions = [
+    [0.25, 0.35], [0.5, 0.22], [0.75, 0.35], [0.38, 0.55], [0.62, 0.48],
+  ].map(([rx, ry]) => [window.innerWidth * rx, window.innerHeight * ry]);
+
+  let idx = 0;
+  function fireBurst() {
+    createBurst(positions[idx][0], positions[idx][1]);
+    idx++;
+    if (idx < positions.length) setTimeout(fireBurst, 350);
+  }
+  fireBurst();
+
+  let frame;
+  const start = Date.now();
+
+  function animate() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    for (let i = particles.length - 1; i >= 0; i--) {
+      const p = particles[i];
+      p.x  += p.vx;
+      p.y  += p.vy;
+      p.vy += 0.09;
+      p.alpha -= 0.013;
+      if (p.alpha <= 0) { particles.splice(i, 1); continue; }
+      ctx.globalAlpha = p.alpha;
+      ctx.fillStyle = p.color;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+
+    if (Date.now() - start < 4500 || particles.length > 0) {
+      frame = requestAnimationFrame(animate);
+    } else {
+      canvas.remove();
+    }
+  }
+  animate();
+
+  setTimeout(() => { cancelAnimationFrame(frame); canvas.remove(); }, 6000);
 }
 
 /* ── Event listeners ── */
