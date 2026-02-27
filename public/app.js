@@ -34,6 +34,7 @@ async function startNewGame() {
   try {
     const data = await apiFetch('/api/session', { method: 'POST' });
     sessionId = data.id;
+    localStorage.setItem('fifteen-puzzle-session', sessionId);
     startTime = new Date(data.startedAt);
     renderBoard(data.tiles, data.moveCount);
     startTimer();
@@ -256,4 +257,26 @@ newGameBtn.addEventListener('click', startNewGame);
 resetBtn.addEventListener('click', resetGame);
 
 /* ── Bootstrap ── */
-startNewGame();
+async function init() {
+  const savedId = localStorage.getItem('fifteen-puzzle-session');
+  if (savedId) {
+    try {
+      const data = await apiFetch(`/api/session/${savedId}`);
+      sessionId = data.id;
+      startTime = new Date(data.startedAt);
+      renderBoard(data.tiles, data.moveCount);
+      if (data.finishedAt) {
+        const elapsed = Math.round((new Date(data.finishedAt) - startTime) / 1000);
+        finishStats.textContent = `Solved in ${data.moveCount} moves and ${elapsed}s`;
+        solvedMsgEl.classList.remove('hidden');
+      } else {
+        startTimer();
+      }
+      return;
+    } catch (e) {
+      // Session not found or stale — fall through to a new game
+    }
+  }
+  startNewGame();
+}
+init();
