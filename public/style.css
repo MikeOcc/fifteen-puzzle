@@ -14,6 +14,9 @@
 body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   background: var(--color-bg);
+  background-image: radial-gradient(ellipse at top, rgba(233, 69, 96, 0.08) 0%, transparent 60%),
+                    radial-gradient(ellipse at bottom right, rgba(0, 180, 216, 0.06) 0%, transparent 50%);
+  background-attachment: fixed;
   color: #eee;
   min-height: 100vh;
   display: flex;
@@ -29,8 +32,13 @@ body {
 h1 {
   font-size: 2.5rem;
   margin-bottom: 1.25rem;
-  color: #e94560;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.06em;
+  background: linear-gradient(90deg, #e94560, #ff8fa3, #e94560);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: shimmer 4s linear infinite;
 }
 
 .stats {
@@ -41,6 +49,7 @@ h1 {
   font-size: 1.1rem;
   color: #a8b2d8;
   font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
 }
 
 /* ── Board ── */
@@ -53,7 +62,9 @@ h1 {
   background: #16213e;
   padding: 12px;
   border-radius: 14px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.55);
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.6),
+              0 0 40px rgba(233, 69, 96, 0.08),
+              inset 0 1px 0 rgba(255, 255, 255, 0.04);
 }
 
 .tile {
@@ -68,19 +79,29 @@ h1 {
   background: var(--color-tile);
   color: #e2e8f0;
   cursor: pointer;
-  transition: transform 0.1s ease, background 0.1s ease;
+  transition: transform 0.12s ease, filter 0.12s ease, box-shadow 0.12s ease;
   user-select: none;
+  box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.4),
+              inset 0 1px 0 rgba(255, 255, 255, 0.07);
 }
 
 .tile:hover {
-  background: #1a4a80;
-  transform: scale(1.06);
+  filter: brightness(1.4);
+  transform: scale(1.09);
+  box-shadow: 0 0 18px rgba(233, 69, 96, 0.45),
+              4px 4px 10px rgba(0, 0, 0, 0.4);
+}
+
+.tile:active {
+  transform: scale(0.95);
+  filter: brightness(1.1);
 }
 
 .tile.blank {
   background: transparent;
   cursor: default;
   transform: none !important;
+  box-shadow: none;
 }
 
 /* ── Solved banner ── */
@@ -92,13 +113,15 @@ h1 {
   border-radius: 12px;
   padding: 1.25rem 2rem;
   margin-bottom: 1.5rem;
-  animation: pop 0.3s ease;
+  animation: pop 0.3s ease, borderPulse 2.5s ease-in-out 0.3s infinite;
+  box-shadow: 0 0 30px rgba(233, 69, 96, 0.25);
 }
 
 .solved-msg h2 {
   font-size: 1.8rem;
   color: #e94560;
   margin-bottom: 0.4rem;
+  letter-spacing: 0.04em;
 }
 
 .solved-msg p {
@@ -123,6 +146,16 @@ h1 {
   to   { transform: scale(1);    opacity: 1; }
 }
 
+@keyframes shimmer {
+  0%   { background-position: 0%   center; }
+  100% { background-position: 200% center; }
+}
+
+@keyframes borderPulse {
+  0%, 100% { box-shadow: 0 0 15px rgba(233, 69, 96, 0.2); }
+  50%       { box-shadow: 0 0 35px rgba(233, 69, 96, 0.6); }
+}
+
 /* ── Controls ── */
 .controls {
   display: flex;
@@ -137,7 +170,7 @@ button {
   border: none;
   border-radius: 8px;
   cursor: pointer;
-  transition: transform 0.1s ease, background 0.1s ease;
+  transition: transform 0.12s ease, box-shadow 0.12s ease, filter 0.12s ease;
 }
 
 button:hover {
@@ -149,32 +182,37 @@ button:active {
 }
 
 #new-game {
-  background: #e94560;
+  background: linear-gradient(135deg, #e94560, #c73652);
   color: #fff;
+  box-shadow: 0 4px 18px rgba(233, 69, 96, 0.4);
 }
 
 #new-game:hover {
-  background: #c73652;
+  filter: brightness(1.15);
+  box-shadow: 0 4px 26px rgba(233, 69, 96, 0.65);
 }
 
 #reset {
   background: var(--color-tile);
   color: #a8b2d8;
-  border: 1px solid #a8b2d8;
+  border: 1px solid rgba(168, 178, 216, 0.5);
+  box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.3);
 }
 
 #reset:hover {
-  background: #1a4a80;
+  filter: brightness(1.35);
+  border-color: #a8b2d8;
 }
 
 #settings-btn {
   background: transparent;
   color: #a8b2d8;
-  border: 1px solid #a8b2d8;
+  border: 1px solid rgba(168, 178, 216, 0.5);
 }
 
 #settings-btn:hover {
-  background: #1a4a80;
+  filter: brightness(1.35);
+  border-color: #a8b2d8;
   color: #fff;
 }
 
@@ -182,7 +220,8 @@ button:active {
 .modal {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.7);
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(4px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -195,19 +234,21 @@ button:active {
 
 .modal-card {
   background: #16213e;
-  border: 1px solid #0f3460;
-  border-radius: 14px;
+  border: 1px solid rgba(233, 69, 96, 0.3);
+  border-radius: 16px;
   padding: 2rem;
   width: 300px;
   display: flex;
   flex-direction: column;
   gap: 1.25rem;
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.6), 0 0 30px rgba(233, 69, 96, 0.08);
 }
 
 .modal-card h2 {
   font-size: 1.4rem;
   color: #e94560;
   text-align: center;
+  letter-spacing: 0.04em;
 }
 
 .setting-row {
@@ -229,7 +270,7 @@ button:active {
 
 .modal-divider {
   border: none;
-  border-top: 1px solid #0f3460;
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
 }
 
 .best-score-row {
@@ -246,12 +287,14 @@ button:active {
 }
 
 #settings-close {
-  background: #e94560;
+  background: linear-gradient(135deg, #e94560, #c73652);
   color: #fff;
   align-self: center;
   padding: 0.6rem 2rem;
+  box-shadow: 0 4px 14px rgba(233, 69, 96, 0.35);
 }
 
 #settings-close:hover {
-  background: #c73652;
+  filter: brightness(1.15);
+  box-shadow: 0 4px 22px rgba(233, 69, 96, 0.6);
 }
