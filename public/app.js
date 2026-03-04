@@ -1,7 +1,9 @@
 /* ── State ── */
-let sessionId = null;
-let startTime = null;
+let sessionId    = null;
+let startTime    = null;
 let timerInterval = null;
+let currentTiles = null;
+let isAnimating  = false;
 
 /* ── DOM refs ── */
 const boardEl        = document.getElementById('board');
@@ -86,13 +88,17 @@ async function resetGame() {
 }
 
 async function makeMove(tileIndex) {
-  if (!sessionId) return;
+  if (!sessionId || isAnimating) return;
+  isAnimating = true;
 
   try {
-    const data = await apiFetch(`/api/session/${sessionId}/move`, {
-      method: 'POST',
-      body: JSON.stringify({ tileIndex }),
-    });
+    const [data] = await Promise.all([
+      apiFetch(`/api/session/${sessionId}/move`, {
+        method: 'POST',
+        body: JSON.stringify({ tileIndex }),
+      }),
+      animateSlide(tileIndex),
+    ]);
 
     if (!data.valid) return;
 
@@ -110,17 +116,21 @@ async function makeMove(tileIndex) {
     if (!e.message.includes('Invalid move') && !e.message.includes('already finished')) {
       console.error(e);
     }
+  } finally {
+    isAnimating = false;
   }
 }
 
 /* ── Rendering ── */
 function renderBoard(tiles, moveCount) {
+  currentTiles = tiles;
   boardEl.innerHTML = '';
   moveCountEl.textContent = `Moves: ${moveCount}`;
 
   tiles.forEach((tile, index) => {
     const cell = document.createElement('div');
     cell.className = 'tile' + (tile === 0 ? ' blank' : '');
+    cell.dataset.index = index;
 
     if (tile !== 0) {
       cell.textContent = tile;
@@ -142,6 +152,54 @@ function startTimer() {
 function disableButtons(disabled) {
   newGameBtn.disabled = disabled;
   resetBtn.disabled = disabled;
+}
+
+/* ── Slide animation ── */
+function animateSlide(tileIndex) {
+  const CELL     = 76;  // tile 68px + gap 8px
+  const DURATION = 160; // ms
+
+  return new Promise(resolve => {
+    if (!currentTiles) { resolve(); return; }
+
+    const blankIndex = currentTiles.indexOf(0);
+    const blankRow   = Math.floor(blankIndex / 4);
+    const blankCol   = blankIndex % 4;
+    const tileRow    = Math.floor(tileIndex / 4);
+    const tileCol    = tileIndex % 4;
+
+    let dx = 0, dy = 0;
+    const movingIndices = [];
+
+    if (tileRow === blankRow) {
+      if (tileCol < blankCol) {
+        dx = CELL;
+        for (let c = tileCol; c < blankCol; c++) movingIndices.push(tileRow * 4 + c);
+      } else if (tileCol > blankCol) {
+        dx = -CELL;
+        for (let c = tileCol; c > blankCol; c--) movingIndices.push(tileRow * 4 + c);
+      }
+    } else if (tileCol === blankCol) {
+      if (tileRow < blankRow) {
+        dy = CELL;
+        for (let r = tileRow; r < blankRow; r++) movingIndices.push(r * 4 + tileCol);
+      } else if (tileRow > blankRow) {
+        dy = -CELL;
+        for (let r = tileRow; r > blankRow; r--) movingIndices.push(r * 4 + tileCol);
+      }
+    }
+
+    if (movingIndices.length === 0) { resolve(); return; }
+
+    movingIndices.forEach(idx => {
+      const el = boardEl.querySelector(`[data-index="${idx}"]`);
+      if (!el) return;
+      el.style.transition = `transform ${DURATION}ms ease`;
+      el.style.transform  = `translate(${dx}px, ${dy}px)`;
+    });
+
+    setTimeout(resolve, DURATION);
+  });
 }
 
 /* ── Fireworks ── */
